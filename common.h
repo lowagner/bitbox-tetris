@@ -41,6 +41,12 @@ extern uint8_t game_raise_speed;
 extern uint8_t game_start_height;
 extern uint8_t game_torus;
 
+extern uint64_t score;
+extern uint32_t scores[2];
+extern uint32_t top_scores[2];
+extern uint64_t top_coop_score;
+extern uint64_t top_wide_score;
+
 // 4-square polyomino types
 #define O4 0
 #define I4 1
@@ -49,5 +55,7 @@ extern uint8_t game_torus;
 #define J4 4
 #define S4 5
 #define Z4 6
+
+uint8_t *write_hex(uint8_t *c, uint64_t number);
 
 #endif

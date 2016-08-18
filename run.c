@@ -15,6 +15,10 @@
 
 uint8_t run_paused CCM_MEMORY;
 
+uint32_t top_scores[2] CCM_MEMORY;
+uint64_t top_coop_score CCM_MEMORY;
+uint64_t top_wide_score CCM_MEMORY;
+
 uint64_t score CCM_MEMORY;
 uint32_t scores[2] CCM_MEMORY;
 
@@ -62,6 +66,9 @@ void run_switch()
     srand(vga_frame);
 
     score = 0;
+    scores[0] = 0;
+    scores[1] = 0;
+
     chip_play_init(0);
     // also setup play field, up to game_start_height
     memset(field, 0, sizeof(field));
@@ -480,15 +487,15 @@ void load_next_tetromino(int p)
             {
                 next[p].y_top = -2;
                 next[p].y_bottom = 0;
+                next[p].x_left = offset;
                 next[p].x_right = offset+1;
-                next[p].x_left = offset-1;
             }
             else // horizontal
             {
                 next[p].y_top = -1;
                 next[p].y_bottom = 0;
                 next[p].x_left = offset-1+rand()%2;
-                next[p].x_right = next[p].x_right+2;
+                next[p].x_right = next[p].x_left+2;
             }
         break;
     }
@@ -540,11 +547,15 @@ void check_line_clear(int p)
                 memset(&field[0][HOLE_X], 0, HOLE_X);
             }
         }
-        scores[1] += 1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
-        if (instantaneous_lines_cleared == 4)
+        if (instantaneous_lines_cleared)
         {
-            strcpy((char *)game_message, "tetris!");
-            message("player 1 got tetris!\n");
+            scores[1] += 1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
+            if (instantaneous_lines_cleared == 4)
+            {
+                strcpy((char *)game_message, "tetris!");
+                message("player 1 got tetris!\n");
+            }
+            instantaneous_lines_cleared = 0;
         }
     }
     else // single player, normal level
@@ -569,13 +580,15 @@ void check_line_clear(int p)
                 memset(field[0], 0, HOLE_X);
             }
         }
-        scores[0] += 1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
         if (instantaneous_lines_cleared)
-            message("player 0 cleared %d lines!\n", instantaneous_lines_cleared);
-        if (instantaneous_lines_cleared == 4)
         {
-            strcpy((char *)game_message, "tetris!");
-            message("player 0 got tetris!\n");
+            scores[0] += 1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
+            if (instantaneous_lines_cleared == 4)
+            {
+                strcpy((char *)game_message, "tetris!");
+                message("player 0 got tetris!\n");
+            }
+            instantaneous_lines_cleared = 0;
         }
     }
 }
@@ -760,55 +773,55 @@ int _check_all(int p, uint8_t *memory)
         switch (player[p].orientation)
         {
             case 0: // nub down
-                if (MEMORY(y, x))
+                if (MEMORY(y, x) & 15)
                     return 1;
                 if (++x > xmax)
                     x = x0;
-                if (MEMORY(y, x))
+                if (MEMORY(y, x) & 15)
                     return 1;
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
                 if (++x > xmax)
                     x = x0;
-                if (MEMORY(y, x))
+                if (MEMORY(y, x) & 15)
                     return 1;
             break;
             case 1: // nub right
-                if (MEMORY(y, x))
+                if (MEMORY(y, x) & 15)
                     return 1;
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
-                if (MEMORY(y+2, x))
+                if (MEMORY(y+2, x) & 15)
                     return 1;
                 if (++x > xmax)
                     x = x0;
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
             break;
             case 2: // nub up
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
                 if (++x > xmax)
                     x = x0;
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
-                if (MEMORY(y, x))
+                if (MEMORY(y, x) & 15)
                     return 1;
                 if (++x > xmax)
                     x = x0;
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
             break;
             case 3: // nub left
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
                 if (++x > xmax)
                     x = x0;
-                if (MEMORY(y, x))
+                if (MEMORY(y, x) & 15)
                     return 1;
-                if (MEMORY(y+1, x))
+                if (MEMORY(y+1, x) & 15)
                     return 1;
-                if (MEMORY(y+2, x))
+                if (MEMORY(y+2, x) & 15)
                     return 1;
             break;
         }
@@ -1144,52 +1157,76 @@ int check_boundaries(int p)
         return 1;
     else if (game_wide)
     {
-        if (player[p].x_left < 0)
+        if (game_torus)
         {
-            if (game_torus)
+            if (player[p].x_left < 0)
                 player[p].x_left += 2*HOLE_X;
-            else
-                return 1;
-        }
-        else if (player[p].x_right >= 2*HOLE_X)
-        {
-            if (game_torus)
+            else if (player[p].x_left >= 2*HOLE_X)
+                player[p].x_left -= 2*HOLE_X;
+            if (player[p].x_right < 0)
+                player[p].x_right += 2*HOLE_X;
+            else if (player[p].x_right >= 2*HOLE_X)
                 player[p].x_right -= 2*HOLE_X;
-            else
+        }
+        else
+        {
+            if (player[p].x_left < 0)
+                return 1;
+            else if (player[p].x_left >= 2*HOLE_X)
+                return 1;
+            if (player[p].x_right < 0)
+                return 1;
+            else if (player[p].x_right >= 2*HOLE_X)
                 return 1;
         }
     }
     else if (p) // player 1 by him/herself
     {
-        if (player[1].x_left < HOLE_X)
+        if (game_torus)
         {
-            if (game_torus)
+            if (player[1].x_left < 0)
                 player[1].x_left += HOLE_X;
-            else
-                return 1;
-        }
-        else if (player[1].x_right >= 2*HOLE_X)
-        {
-            if (game_torus)
+            else if (player[1].x_left >= HOLE_X)
+                player[1].x_left -= HOLE_X;
+            if (player[1].x_right < 0)
+                player[1].x_right += HOLE_X;
+            else if (player[1].x_right >= HOLE_X)
                 player[1].x_right -= HOLE_X;
-            else
+        }
+        else
+        {
+            if (player[1].x_left < 0)
+                return 1;
+            else if (player[1].x_left >= HOLE_X)
+                return 1;
+            if (player[1].x_right < 0)
+                return 1;
+            else if (player[1].x_right >= HOLE_X)
                 return 1;
         }
     }
     else // player 0 by him/herself
     {
-        if (player[0].x_left < 0)
+        if (game_torus)
         {
-            if (game_torus)
+            if (player[0].x_left < 0)
                 player[0].x_left += HOLE_X;
-            else
-                return 1;
-        }
-        else if (player[0].x_right >= HOLE_X)
-        {
-            if (game_torus)
+            else if (player[0].x_left >= HOLE_X)
+                player[0].x_left -= HOLE_X;
+            if (player[0].x_right < 0)
+                player[0].x_right += HOLE_X;
+            else if (player[0].x_right >= HOLE_X)
                 player[0].x_right -= HOLE_X;
-            else
+        }
+        else
+        {
+            if (player[0].x_left < 0)
+                return 1;
+            else if (player[0].x_left >= HOLE_X)
+                return 1;
+            if (player[0].x_right < 0)
+                return 1;
+            else if (player[0].x_right >= HOLE_X)
                 return 1;
         }
     }
@@ -1283,16 +1320,16 @@ int collide_bottom()
 
     if (instantaneous_lines_cleared)
     {
-        score += 1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
+        score += (17-8*game_players) << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
         if (instantaneous_lines_cleared == 4)
             strcpy((char *)game_message, "tetris!");
         else if (instantaneous_lines_cleared == 8)
-            strcpy((char *)game_message, "double tetris!!");
+            strcpy((char *)game_message, "octris!!");
         else if (instantaneous_lines_cleared > 4)
             strcpy((char *)game_message, "awesome!");
         else
             game_message[0] = 0;
-        message("got lines %d - points %d, got score %lu\n", instantaneous_lines_cleared, (1<<(instantaneous_lines_cleared*instantaneous_lines_cleared/2)), score);
+        message("got lines %d - points %d, got score %lu\n", instantaneous_lines_cleared, ((17-8*game_players)<<(instantaneous_lines_cleared*instantaneous_lines_cleared/2)), score);
     }
     
     return collided[0] | (collided[1]<<1);

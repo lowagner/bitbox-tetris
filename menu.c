@@ -61,27 +61,51 @@ void menu_line()
             uint8_t msg[] = { '0'+game_players, ' ', 'p', 'l', 'a', 'y', 'e', 'r', 0 };
             font_render_line_doubled(msg, 52, internal_line, menu_index == 0 ? SELECT_COLOR :
                 65535, BG_COLOR*257);
+
+            font_render_line_doubled((const uint8_t *)"top score:", 162, internal_line, 
+                65535, BG_COLOR*257);
         }
         break;
         case 5:
         if (game_players == 1)
         {
             if (game_wide)
-            font_render_line_doubled((const uint8_t *)"wide", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
-                65535, BG_COLOR*257);
+            {
+                font_render_line_doubled((const uint8_t *)"wide", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
+                    65535, BG_COLOR*257);
+                uint8_t msg[13];
+                font_render_line_doubled(write_hex(msg+12, top_wide_score), 162, internal_line, 
+                    65535, BG_COLOR*257);
+            }
             else
-            font_render_line_doubled((const uint8_t *)"normal", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
-                65535, BG_COLOR*257);
+            {
+                font_render_line_doubled((const uint8_t *)"normal", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
+                    65535, BG_COLOR*257);
+                uint8_t msg[13];
+                font_render_line_doubled(write_hex(msg+12, top_scores[0] > top_scores[1] ?
+                    top_scores[0] : top_scores[1]), 162, internal_line, 65535, BG_COLOR*257);
+            }
         }
         else
         {
             if (game_wide)
-            font_render_line_doubled((const uint8_t *)"coop", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
-                65535, BG_COLOR*257);
+            {
+                font_render_line_doubled((const uint8_t *)"coop", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
+                    65535, BG_COLOR*257);
+                uint8_t msg[13];
+                font_render_line_doubled(write_hex(msg+12, top_coop_score), 162, internal_line, 
+                    65535, BG_COLOR*257);
+            }
             else
-            font_render_line_doubled((const uint8_t *)"duel", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
-                65535, BG_COLOR*257);
-
+            {
+                font_render_line_doubled((const uint8_t *)"duel", 52, internal_line, menu_index == 1 ? SELECT_COLOR :
+                    65535, BG_COLOR*257);
+                uint8_t msg[15];
+                uint8_t *center = write_hex(msg+14, top_scores[1]);
+                uint8_t *begin = write_hex(--center, top_scores[0]);
+                *center = '/';
+                font_render_line_doubled(begin, 162, internal_line, 65535, BG_COLOR*257);
+            }
         }
         break;
         case 7:

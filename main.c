@@ -22,6 +22,19 @@ uint8_t gamepad_press_wait;
 
 #define BSOD 140
 
+uint8_t *write_hex(uint8_t *c, uint64_t number)
+{
+    *c = 0;
+    *--c = hex[number%64];
+    number /= 64;
+    while (number)
+    {
+        *--c = hex[number%64];
+        number /= 64;
+    }
+    return c;
+}
+
 void game_init()
 { 
     game_message[0] = 0;
@@ -168,6 +181,43 @@ void game_switch(VisualMode new_visual_mode)
 {
     chip_kill();
     game_message[0] = 0;
+
+    if (visual_mode == GameOn)
+    {
+        // check scores
+        if (game_wide)
+        {
+            if (game_players == 1)
+            {
+                if (score > top_wide_score)
+                {
+                    top_wide_score = score;
+                    strcpy((char *)game_message, "new top score!");
+                }
+            }
+            else
+            {
+                if (score > top_coop_score)
+                {
+                    top_coop_score = score;
+                    strcpy((char *)game_message, "new top score!");
+                }
+            }
+        }
+        else
+        {
+            if (scores[0] > top_scores[0])
+            {
+                top_scores[0] = scores[0];
+                strcpy((char *)game_message, "new top score!");
+            }
+            if (scores[1] > top_scores[1])
+            {
+                top_scores[1] = scores[1];
+                strcpy((char *)game_message, "new top score!");
+            }
+        }
+    }
 
     switch (new_visual_mode)
     {
