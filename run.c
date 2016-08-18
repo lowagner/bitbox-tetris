@@ -7,7 +7,7 @@
 #include <stdlib.h> // abs
 #include <string.h> // memset
 
-#define TOP_OFFSET 20
+#define TOP_OFFSET 24
 #define BG_COLOR 5
 #define BOTTOM_COLOR 132
 #define MEMORY(y, x) memory[(y)*2*HOLE_X + (x)]
@@ -63,11 +63,19 @@ void load_next_tetromino(int p);
 
 void run_switch()
 {
+    message("starting new game\n");
     srand(vga_frame);
 
     score = 0;
     scores[0] = 0;
     scores[1] = 0;
+
+    player_message_start[0] = player_message[0];
+    player_message_start[1] = player_message[0];
+    player_message[0][0] = '0';
+    player_message[0][1] = 0;
+    player_message[1][0] = '0';
+    player_message[1][1] = 0;
 
     chip_play_init(0);
     // also setup play field, up to game_start_height
@@ -256,7 +264,11 @@ void run_line()
                 font_render_line_doubled((const uint8_t *)"paused", 16, vga_line-(TOP_OFFSET-10), 65535, BG_COLOR*257);
         }
         else
-            font_render_line_doubled(game_message, 16, vga_line-(TOP_OFFSET-10), 65535, BG_COLOR*257);
+        {
+            font_render_line_doubled(player_message_start[0], 16, vga_line-(TOP_OFFSET-10), 65535, BG_COLOR*257);
+            if (game_wide == 0 && game_players > 1)
+            font_render_line_doubled(player_message_start[1], 16+17*10, vga_line-(TOP_OFFSET-10), 65535, BG_COLOR*257);
+        }
 
         return;
     }
@@ -423,18 +435,24 @@ void end_player(int p)
         // if p=0, then player 1 won, make game_win_state odd
         game_win_state = 3-p + 100;
         if (game_wide)
-            strcpy((char *)game_message, "you lost!");
+        {
+            game_win_state += 20;
+            strcpy((char *)player_message[0], "you lost!");
+            player_message_start[0] = player_message[0];
+        }
         else
         {
-            strcpy((char *)game_message, "player   lost!");
-            game_message[7] = '1'+p;
+            strcpy((char *)player_message[p], "player   lost!");
+            player_message[p][7] = '1'+p;
+            player_message_start[p] = player_message[p];
         }
     }
     else if (game_win_state < 0)
         message("already had a tie loss, why is player %d being ended again?\n", p);
     else if (game_win_state % 2 == p)
     {
-        strcpy((char *)game_message, "both players lost!");
+        strcpy((char *)player_message[p], "you lost, too!");
+        player_message_start[0] = player_message[0];
         game_win_state = -100;
     }
     else
@@ -549,12 +567,16 @@ void check_line_clear(int p)
         }
         if (instantaneous_lines_cleared)
         {
-            scores[1] += 1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
+            scores[1] += (1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2)) +
+                (1+game_fall_speed)*(1+game_start_height)*instantaneous_lines_cleared/2;
             if (instantaneous_lines_cleared == 4)
             {
-                strcpy((char *)game_message, "tetris!");
+                strcpy((char *)player_message[1], "tetris!");
+                player_message_start[1] = player_message[1];
                 message("player 1 got tetris!\n");
             }
+            else
+                player_message_start[1] = write_hex(player_message[1]+15, scores[1]);
             instantaneous_lines_cleared = 0;
         }
     }
@@ -582,12 +604,16 @@ void check_line_clear(int p)
         }
         if (instantaneous_lines_cleared)
         {
-            scores[0] += 1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
+            scores[0] += (1 << (instantaneous_lines_cleared*instantaneous_lines_cleared/2)) +
+                (1+game_fall_speed)*(1+game_start_height)*instantaneous_lines_cleared/2;
             if (instantaneous_lines_cleared == 4)
             {
-                strcpy((char *)game_message, "tetris!");
+                strcpy((char *)player_message[0], "tetris!");
+                player_message_start[0] = player_message[0];
                 message("player 0 got tetris!\n");
             }
+            else
+                player_message_start[0] = write_hex(player_message[0]+15, scores[0]);
             instantaneous_lines_cleared = 0;
         }
     }
@@ -1320,16 +1346,26 @@ int collide_bottom()
 
     if (instantaneous_lines_cleared)
     {
-        score += (17-8*game_players) << (instantaneous_lines_cleared*instantaneous_lines_cleared/2);
+        score += ((17-8*game_players) << (instantaneous_lines_cleared*instantaneous_lines_cleared/2)) + 
+            (3-game_players)*(1+game_fall_speed)*(1+game_start_height)*instantaneous_lines_cleared/2;
         if (instantaneous_lines_cleared == 4)
-            strcpy((char *)game_message, "tetris!");
+        {
+            strcpy((char *)player_message[0], "tetris!");
+            player_message_start[0] = player_message[0];
+        }
         else if (instantaneous_lines_cleared == 8)
-            strcpy((char *)game_message, "octris!!");
+        {
+            strcpy((char *)player_message[0], "octopus!!");
+            player_message_start[0] = player_message[0];
+        }
         else if (instantaneous_lines_cleared > 4)
-            strcpy((char *)game_message, "awesome!");
+        {
+            strcpy((char *)player_message[0], "awesome!");
+            player_message_start[0] = player_message[0];
+        }
         else
-            game_message[0] = 0;
-        message("got lines %d - points %d, got score %lu\n", instantaneous_lines_cleared, ((17-8*game_players)<<(instantaneous_lines_cleared*instantaneous_lines_cleared/2)), score);
+            player_message_start[0] = write_hex(player_message[0]+15, score);
+        message("got lines %d - got score %lu\n", instantaneous_lines_cleared, score);
     }
     
     return collided[0] | (collided[1]<<1);
@@ -1366,7 +1402,43 @@ void raise_up()
     field[y][HOLE_X+rand()%HOLE_X] = 0;
     // check collisions:  if any player blocks are on top of field blocks,
     // push the player block up in y, set it, and put in a new one
-    collide_bottom();
+    switch (collide_bottom())
+    {
+        case 0:
+            if (game_wide)
+            {
+                score += (3-game_players)*game_raise_speed*game_raise_speed;
+                player_message_start[0] = write_hex(player_message[0]+15, score);
+            }
+            else
+            {
+                scores[0] += game_raise_speed*game_raise_speed;
+                player_message_start[0] = write_hex(player_message[0]+15, scores[0]);
+                if (game_players > 1)
+                {
+                    scores[1] += game_raise_speed*game_raise_speed;
+                    player_message_start[1] = write_hex(player_message[1]+15, scores[1]);
+                }
+            }
+        break;
+        case 1:
+            if (!game_wide)
+            {
+                if (game_players > 1)
+                {
+                    scores[1] += game_raise_speed*game_raise_speed;
+                    player_message_start[1] = write_hex(player_message[1]+15, scores[1]);
+                }
+            }
+        break;
+        case 2:
+            if (!game_wide)
+            {
+                scores[0] += game_raise_speed*game_raise_speed;
+                player_message_start[0] = write_hex(player_message[0]+15, scores[0]);
+            }
+        break;
+    }
 }
 
 void reset_position(int p)
@@ -1816,7 +1888,7 @@ void run_controls()
     {
         if (GAMEPAD_PRESSING(0, select) || game_win_state)
         {
-            game_message[0] = 0;
+            player_message[0][0] = 0;
             run_paused = 0;
             previous_visual_mode = None;
             game_switch(MainMenu);

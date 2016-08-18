@@ -30,6 +30,8 @@ void game_switch(VisualMode new_visual_mode);
 extern uint8_t gamepad_press_wait;
 extern uint16_t old_gamepad[2];
 
+extern uint8_t player_message[2][16];
+extern uint8_t *player_message_start[2];
 extern uint8_t game_message[32];
 extern const uint8_t hex[64]; // not exactly hex but ok!
 

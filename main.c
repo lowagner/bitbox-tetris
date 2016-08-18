@@ -17,6 +17,8 @@ VisualMode visual_mode CCM_MEMORY;
 VisualMode previous_visual_mode CCM_MEMORY;
 VisualMode old_visual_mode CCM_MEMORY;
 uint8_t game_message[32] CCM_MEMORY;
+uint8_t player_message[2][16] CCM_MEMORY;
+uint8_t *player_message_start[2] CCM_MEMORY;
 uint16_t old_gamepad[2] CCM_MEMORY;
 uint8_t gamepad_press_wait;
 
@@ -211,7 +213,7 @@ void game_switch(VisualMode new_visual_mode)
                 top_scores[0] = scores[0];
                 strcpy((char *)game_message, "new top score!");
             }
-            if (scores[1] > top_scores[1])
+            if (game_players > 1 && scores[1] > top_scores[1])
             {
                 top_scores[1] = scores[1];
                 strcpy((char *)game_message, "new top score!");
