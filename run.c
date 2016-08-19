@@ -415,10 +415,90 @@ void _draw_tetromino
         }
         break;
         case S4:
-
+        if (orientation % 2) // vertical
+        {
+            switch (line)
+            {
+                case 2:
+                    dst += SQUARE/2;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                case 0:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    break;
+                break;
+                case 1:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+        }
+        else // horizontal
+        {
+            switch (line)
+            {
+                case 0:
+                    dst += SQUARE/2;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                case 1:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+        }
         break;
         case Z4:
-
+        if (orientation % 2) // vertical
+        {
+            switch (line)
+            {
+                case 0:
+                    dst += SQUARE/2;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                case 2:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    break;
+                break;
+                case 1:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+        }
+        else // horizontal
+        {
+            switch (line)
+            {
+                case 1:
+                    dst += SQUARE/2;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                case 0:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+        }
         break;
     }
 }
@@ -654,7 +734,7 @@ void load_next_tetromino(int p)
     player[p].color = next[p].color;
     player[p].dropped = 0;
    
-    next[p].tetromino = rand()%5;
+    next[p].tetromino = rand()%7;
     next[p].color = 1 + rand()%15;
 
     const int offset = (game_wide && game_players == 1) ? HOLE_X-1 : p*HOLE_X+HOLE_X/2-1;
@@ -685,6 +765,8 @@ void load_next_tetromino(int p)
         case T4:
         case L4:
         case J4:
+        case S4:
+        case Z4:
             next[p].orientation = rand()%4;
             // 0 has nub below, 1 has nub to right, 2 has nub up, 3 has nub left
             if (next[p].orientation % 2) // vertical
@@ -701,12 +783,6 @@ void load_next_tetromino(int p)
                 next[p].x_left = offset-1+rand()%2;
                 next[p].x_right = next[p].x_left+2;
             }
-        break;
-        case S4:
-
-        break;
-        case Z4:
-
         break;
     }
 }
@@ -988,10 +1064,48 @@ void _set_tetromino(int p, uint8_t *memory)
         }
         break;
         case S4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            MEMORY(y, x) = player[p].color;
+            MEMORY(y+1, x) = player[p].color;
+            if (++x > xmax)
+                x = x0;
+            MEMORY(y+1, x) = player[p].color;
+            MEMORY(y+2, x) = player[p].color;
+        }
+        else // horizontal
+        {
+            MEMORY(y+1, x) = player[p].color;
+            if (++x > xmax)
+                x = x0;
+            MEMORY(y+1, x) = player[p].color;
+            MEMORY(y, x) = player[p].color;
+            if (++x > xmax)
+                x = x0;
+            MEMORY(y, x) = player[p].color;
+        }
         break;
         case Z4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            MEMORY(y+2, x) = player[p].color;
+            MEMORY(y+1, x) = player[p].color;
+            if (++x > xmax)
+                x = x0;
+            MEMORY(y+1, x) = player[p].color;
+            MEMORY(y, x) = player[p].color;
+        }
+        else // horizontal
+        {
+            MEMORY(y, x) = player[p].color;
+            if (++x > xmax)
+                x = x0;
+            MEMORY(y, x) = player[p].color;
+            MEMORY(y+1, x) = player[p].color;
+            if (++x > xmax)
+                x = x0;
+            MEMORY(y+1, x) = player[p].color;
+        }
         break;
         default:
             message("unknown tetromino for player 0: %d\n", player[0].tetromino);
@@ -1242,10 +1356,64 @@ int _check_all(int p, uint8_t *memory)
         }
         break;
         case S4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            if (MEMORY(y, x) & 15)
+                return 1;
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+            if (MEMORY(y+2, x) & 15)
+                return 1;
+        }
+        else
+        {
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+            if (MEMORY(y, x) & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (MEMORY(y, x) & 15)
+                return 1;
+        }
         break;
         case Z4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            if (MEMORY(y+2, x) & 15)
+                return 1;
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+            if (MEMORY(y, x) & 15)
+                return 1;
+        }
+        else
+        {
+            if (MEMORY(y, x) & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (MEMORY(y, x) & 15)
+                return 1;
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (MEMORY(y+1, x) & 15)
+                return 1;
+        }
         break;
         default:
             message("unknown tetromino for player 0: %d\n", player[0].tetromino);
@@ -1411,11 +1579,49 @@ int check_left(int p)
         break;
 // check_left
         case S4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            if (field[y][x] & 15)
+                return 1;
+            if (field[y+1][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y+2][x] & 15)
+                return 1;
+        }
+        else // horizontal
+        {
+            if (field[y+1][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y][x] & 15)
+                return 1;
+        }
         break;
 // check_left
         case Z4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            if (field[y+1][x] & 15)
+                return 1;
+            if (field[y+2][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y][x] & 15)
+                return 1;
+        }
+        else // horizontal
+        {
+            if (field[y][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y+1][x] & 15)
+                return 1;
+        }
         break;
         default:
             message("unknown tetromino for player 0: %d\n", player[0].tetromino);
@@ -1581,11 +1787,49 @@ int check_right(int p)
         break;
 // check_right
         case S4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            if (field[y+1][x] & 15)
+                return 1;
+            if (field[y+2][x] & 15)
+                return 1;
+            if (--x < x0)
+                x = xmax;
+            if (field[y][x] & 15)
+                return 1;
+        }
+        else // horizontal
+        {
+            if (field[y][x] & 15)
+                return 1;
+            if (--x > x0)
+                x = xmax;
+            if (field[y+1][x] & 15)
+                return 1;
+        }
         break;
 // check_right
         case Z4:
-
+        if (player[p].orientation % 2) // vertical
+        {
+            if (field[y][x] & 15)
+                return 1;
+            if (field[y+1][x] & 15)
+                return 1;
+            if (--x < x0)
+                x = xmax;
+            if (field[y+2][x] & 15)
+                return 1;
+        }
+        else // horizontal
+        {
+            if (field[y+1][x] & 15)
+                return 1;
+            if (--x > x0)
+                x = xmax;
+            if (field[y][x] & 15)
+                return 1;
+        }
         break;
         default:
             message("unknown tetromino for player 0: %d\n", player[0].tetromino);
@@ -1778,11 +2022,53 @@ int check_bottom(int p)
         break;
 // check_bottom
         case S4:
-
+        if (player[p].orientation % 2)
+        {
+            if (field[y-1][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y][x] & 15)
+                return 1;
+        }
+        else
+        {
+            if (field[y][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y-1][x] & 15)
+                return 1;
+        }
         break;
 // check_bottom
         case Z4:
-
+        if (player[p].orientation % 2)
+        {
+            if (field[y][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y-1][x] & 15)
+                return 1;
+        }
+        else
+        {
+            if (field[y-1][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y][x] & 15)
+                return 1;
+            if (++x > xmax)
+                x = x0;
+            if (field[y][x] & 15)
+                return 1;
+        }
         break;
         default:
             message("unknown tetromino for player 0: %d\n", player[0].tetromino);
@@ -2130,6 +2416,8 @@ int rotate_clockwise(int p)
         case T4:
         case L4:
         case J4:
+        case S4:
+        case Z4:
             switch (player[p].orientation)
             {
                 case 0: // nub below
@@ -2157,12 +2445,6 @@ int rotate_clockwise(int p)
                     player[p].orientation = 2;
                 break;
             }
-        break;
-        case S4:
-
-        break;
-        case Z4:
-
         break;
         default:
             message("unknown tetromino for player 0: %d\n", player[0].tetromino);
@@ -2221,6 +2503,8 @@ int rotate_counterclockwise(int p)
         case T4:
         case L4:
         case J4:
+        case S4:
+        case Z4:
             switch (player[p].orientation)
             {
                 case 0: // nub below
@@ -2248,12 +2532,6 @@ int rotate_counterclockwise(int p)
                     player[p].orientation = 0;
                 break;
             }
-        break;
-        case S4:
-
-        break;
-        case Z4:
-
         break;
         default:
             message("unknown tetromino for player 0: %d\n", player[0].tetromino);
