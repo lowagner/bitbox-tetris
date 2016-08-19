@@ -6,7 +6,7 @@
 #define SCREEN_H 240
 
 #define HOLE_X 10
-#define HOLE_Y 20
+#define HOLE_Y 24
 #define SQUARE 10  // make divisible by 2
 
 typedef enum {
