@@ -2171,39 +2171,45 @@ void move_down_maybe()
     {
         int moved = 0;
         
-        if (player[0].dropped || player[0].y_top < 0)
+        if (player[0].dropped || player[0].y_top < 4)
         {
             ++player[0].y_top;
             ++player[0].y_bottom;
             moved = 1;
         }
-        if (player[1].dropped || player[1].y_top < 0)
-        {
-            ++player[1].y_top;
-            ++player[1].y_bottom;
-            moved += 2;
-        }
 
-        if (moved && collide_bottom() == 0)
+        if (game_players > 1)
         {
-            // neither collided with something solid, 
-            // check if one collided with the other
-            if (check_players())
-            switch (moved)
+            if (player[1].dropped || player[1].y_top < 4)
             {
-                case 3:
-                    message("unexpected moved=3 in fallspeed=0 mode\n");
-                    // fall through to resolve...?
-                case 1:
-                    --player[0].y_top;
-                    --player[0].y_bottom;
-                break;
-                case 2:
-                    --player[1].y_top;
-                    --player[1].y_bottom;
-                break;
+                ++player[1].y_top;
+                ++player[1].y_bottom;
+                moved += 2;
+            }
+
+            if (moved && collide_bottom() == 0)
+            {
+                // neither collided with something solid, 
+                // check if one collided with the other
+                if (check_players())
+                switch (moved)
+                {
+                    case 3:
+                        message("unexpected moved=3 in fallspeed=0 mode\n");
+                        // fall through to resolve...?
+                    case 1:
+                        --player[0].y_top;
+                        --player[0].y_bottom;
+                    break;
+                    case 2:
+                        --player[1].y_top;
+                        --player[1].y_bottom;
+                    break;
+                }
             }
         }
+        else if (moved)
+            collide_bottom();
     }
 }
 
