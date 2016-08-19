@@ -326,7 +326,93 @@ void _draw_tetromino
         }
         break;
         case J4:
-
+        switch (orientation)
+        {
+            case 0: // nub down on the right
+            switch (line)
+            {
+                case 0:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+                case 1:
+                    dst += 2*SQUARE/2;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+            break;
+            case 1: // nub right up top
+            switch (line)
+            {
+                case 1:
+                case 2:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+                case 0:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+            break;
+            case 2: // nub up on left
+            switch (line)
+            {
+                case 1:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+                case 0:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+            break;
+            case 3: // nub left on bottom
+            switch (line)
+            {
+                case 0:
+                case 1:
+                    dst += SQUARE/2;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+                case 2:
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                    if (dst >= too_far)
+                        dst -= (1+game_wide)*HOLE_X*SQUARE/2;
+                    for (int i=0; i<SQUARE/2; ++i)
+                        *++dst = color;
+                break;
+            }
+            break;
+        }
         break;
         case S4:
 
@@ -568,7 +654,7 @@ void load_next_tetromino(int p)
     player[p].color = next[p].color;
     player[p].dropped = 0;
    
-    next[p].tetromino = rand()%4;
+    next[p].tetromino = rand()%5;
     next[p].color = 1 + rand()%15;
 
     const int offset = (game_wide && game_players == 1) ? HOLE_X-1 : p*HOLE_X+HOLE_X/2-1;
@@ -598,6 +684,7 @@ void load_next_tetromino(int p)
         break;
         case T4:
         case L4:
+        case J4:
             next[p].orientation = rand()%4;
             // 0 has nub below, 1 has nub to right, 2 has nub up, 3 has nub left
             if (next[p].orientation % 2) // vertical
@@ -614,9 +701,6 @@ void load_next_tetromino(int p)
                 next[p].x_left = offset-1+rand()%2;
                 next[p].x_right = next[p].x_left+2;
             }
-        break;
-        case J4:
-
         break;
         case S4:
 
@@ -862,7 +946,46 @@ void _set_tetromino(int p, uint8_t *memory)
         }
         break;
         case J4:
-
+        switch (player[p].orientation)
+        {
+            case 0: // nub down on the right
+                MEMORY(y, x) = player[p].color;
+                if (++x > xmax)
+                    x = x0;
+                MEMORY(y, x) = player[p].color;
+                if (++x > xmax)
+                    x = x0;
+                MEMORY(y, x) = player[p].color;
+                MEMORY(y+1, x) = player[p].color;
+            break;
+            case 1: // nub right on the top
+                MEMORY(y, x) = player[p].color;
+                if (x >= xmax)
+                    MEMORY(y, x0) = player[p].color;
+                else
+                    MEMORY(y, x+1) = player[p].color;
+                MEMORY(y+1, x) = player[p].color;
+                MEMORY(y+2, x) = player[p].color;
+            break;
+            case 2: // nub up on the left
+                MEMORY(y, x) = player[p].color;
+                MEMORY(y+1, x) = player[p].color;
+                if (++x > xmax)
+                    x = x0;
+                MEMORY(y+1, x) = player[p].color;
+                if (++x > xmax)
+                    x = x0;
+                MEMORY(y+1, x) = player[p].color;
+            break;
+            case 3: // nub left down below
+                MEMORY(y+2, x) = player[p].color;
+                if (++x > xmax)
+                    x = x0;
+                MEMORY(y, x) = player[p].color;
+                MEMORY(y+1, x) = player[p].color;
+                MEMORY(y+2, x) = player[p].color;
+            break;
+        }
         break;
         case S4:
 
@@ -1056,7 +1179,67 @@ int _check_all(int p, uint8_t *memory)
         }
         break;
         case J4:
-
+        switch (player[p].orientation)
+        {
+            case 0: // nub down on the right
+                if (MEMORY(y, x) & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (MEMORY(y, x) & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (MEMORY(y, x) & 15)
+                    return 1;
+                if (MEMORY(y+1, x) & 15)
+                    return 1;
+            break;
+            case 1: // nub right up top
+                if (MEMORY(y, x) & 15)
+                    return 1;
+                if (x >= xmax)
+                {
+                    if (MEMORY(y, x0) & 15)
+                        return 1;
+                }
+                else
+                {
+                    if (MEMORY(y, x+1) & 15)
+                        return 1;
+                }
+                if (MEMORY(y+1, x) & 15)
+                    return 1;
+                if (MEMORY(y+2, x) & 15)
+                    return 1;
+            break;
+            case 2: // nub up on the left
+                if (MEMORY(y, x) & 15)
+                    return 1;
+                if (MEMORY(y+1, x) & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (MEMORY(y+1, x) & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (MEMORY(y+1, x) & 15)
+                    return 1;
+            break;
+            case 3: // nub left down below
+                if (MEMORY(y+2, x) & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (MEMORY(y, x) & 15)
+                    return 1;
+                if (MEMORY(y+1, x) & 15)
+                    return 1;
+                if (MEMORY(y+2, x) & 15)
+                    return 1;
+            break;
+        }
         break;
         case S4:
 
@@ -1188,7 +1371,43 @@ int check_left(int p)
         break;
 // check_left
         case J4:
-
+        switch (player[p].orientation)
+        {
+            case 0: // nub down on the right
+                if (field[y][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y+1][x] & 15)
+                    return 1;
+            break;
+            case 1: // nub right up top
+                if (field[y][x] & 15)
+                    return 1;
+                if (field[y+1][x] & 15)
+                    return 1;
+                if (field[y+2][x] & 15)
+                    return 1;
+            break;
+            case 2: // nub up on the left
+                if (field[y][x] & 15)
+                    return 1;
+                if (field[y+1][x] & 15)
+                    return 1;
+            break;
+            case 3: // nub left down below
+                if (field[y+2][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y][x] & 15)
+                    return 1;
+                if (field[y+1][x] & 15)
+                    return 1;
+            break;
+        }
         break;
 // check_left
         case S4:
@@ -1322,7 +1541,43 @@ int check_right(int p)
         break;
 // check_right
         case J4:
-
+        switch (player[p].orientation)
+        {
+            case 0: // nub down on the right
+                if (field[y][x] & 15)
+                    return 1;
+                if (field[y+1][x] & 15)
+                    return 1;
+            break;
+            case 1: // nub right up top
+                if (field[y][x] & 15)
+                    return 1;
+                if (--x < x0)
+                    x = xmax;
+                if (field[y+1][x] & 15)
+                    return 1;
+                if (field[y+2][x] & 15)
+                    return 1;
+            break;
+            case 2: // nub up on the left
+                if (field[y+1][x] & 15)
+                    return 1;
+                if (--x < x0)
+                    x = xmax;
+                if (--x < x0)
+                    x = xmax;
+                if (field[y][x] & 15)
+                    return 1;
+            break;
+            case 3: // nub left down below
+                if (field[y][x] & 15)
+                    return 1;
+                if (field[y+1][x] & 15)
+                    return 1;
+                if (field[y+2][x] & 15)
+                    return 1;
+            break;
+        }
         break;
 // check_right
         case S4:
@@ -1477,7 +1732,49 @@ int check_bottom(int p)
         break;
 // check_bottom
         case J4:
-
+        switch (player[p].orientation)
+        {
+            case 0: // nub down on the right
+                if (field[y-1][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y-1][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y][x] & 15)
+                    return 1;
+            break;
+            case 1: // nub right up top
+                if (field[y][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y-2][x] & 15)
+                    return 1;
+            break;
+            case 2: // nub up on the left
+                if (field[y][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y][x] & 15)
+                    return 1;
+            break;
+            case 3: // nub left down below
+                if (field[y][x] & 15)
+                    return 1;
+                if (++x > xmax)
+                    x = x0;
+                if (field[y][x] & 15)
+                    return 1;
+            break;
+        }
         break;
 // check_bottom
         case S4:
@@ -1832,6 +2129,7 @@ int rotate_clockwise(int p)
         break;
         case T4:
         case L4:
+        case J4:
             switch (player[p].orientation)
             {
                 case 0: // nub below
@@ -1859,9 +2157,6 @@ int rotate_clockwise(int p)
                     player[p].orientation = 2;
                 break;
             }
-        break;
-        case J4:
-
         break;
         case S4:
 
@@ -1925,6 +2220,7 @@ int rotate_counterclockwise(int p)
         break;
         case T4:
         case L4:
+        case J4:
             switch (player[p].orientation)
             {
                 case 0: // nub below
@@ -1952,9 +2248,6 @@ int rotate_counterclockwise(int p)
                     player[p].orientation = 0;
                 break;
             }
-        break;
-        case J4:
-
         break;
         case S4:
 
