@@ -2454,7 +2454,7 @@ int rotate_clockwise(int p)
         reset_position(p);
         return 0;
     }
-    return 0;
+    return 1;
 }
 
 int rotate_counterclockwise(int p)
