@@ -2555,12 +2555,12 @@ void handle_movement()
     if (GAMEPAD_PRESSED(0, down))
         player[0].dropped = 1;
 
-    if (GAMEPAD_PRESS(0, R) || GAMEPAD_PRESS(0, A))
+    if (GAMEPAD_PRESS(0, R) || GAMEPAD_PRESS(0, A) || GAMEPAD_PRESS(0, Y))
     {
         if (rotate_clockwise(0))
             collided[0] = check_all(0);
     }
-    else if (GAMEPAD_PRESS(0, L) || GAMEPAD_PRESS(0, B) || GAMEPAD_PRESS(0, up))
+    else if (GAMEPAD_PRESS(0, L) || GAMEPAD_PRESS(0, B) || GAMEPAD_PRESS(0, X) || GAMEPAD_PRESS(0, up))
     {
         if (rotate_counterclockwise(0))
             collided[0] = check_all(0);
@@ -2617,12 +2617,12 @@ void handle_movement()
     if (GAMEPAD_PRESSED(1, down))
         player[1].dropped = 1;
     
-    if (GAMEPAD_PRESS(1, R) || GAMEPAD_PRESS(1, A))
+    if (GAMEPAD_PRESS(1, R) || GAMEPAD_PRESS(1, A) || GAMEPAD_PRESS(1, Y))
     {
         if (rotate_clockwise(1))
             collided[1] = check_all(1);
     }
-    else if (GAMEPAD_PRESS(1, L) || GAMEPAD_PRESS(1, B) || GAMEPAD_PRESS(1, up))
+    else if (GAMEPAD_PRESS(1, L) || GAMEPAD_PRESS(1, B) || GAMEPAD_PRESS(1, X) || GAMEPAD_PRESS(1, up))
     {
         if (rotate_counterclockwise(1))
             collided[1] = check_all(1);
