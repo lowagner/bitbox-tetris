@@ -2788,7 +2788,7 @@ void run_controls()
 {
     if (GAMEPAD_PRESS(0, start))
     {
-        if (GAMEPAD_PRESSING(0, select) || game_win_state)
+        if (GAMEPAD_PRESSED(0, select) || game_win_state)
         {
             player_message[0][0] = 0;
             run_paused = 0;

@@ -290,7 +290,7 @@ void menu_controls()
         // start game
         load_song(0); // load song but don't play
         previous_visual_mode = MainMenu;
-        if (GAMEPAD_PRESSING(0, L))
+        if (GAMEPAD_PRESSED(0, L))
             game_switch(EditAnthem);
         else
             game_switch(GameOn);
