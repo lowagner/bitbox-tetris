@@ -403,7 +403,7 @@ void instrument_render_command(int j, int y)
             break;
         case RANDOMIZE:
             cmd = 'R';
-            param = hex[param];
+            param = 224 + param;
             break;
         case JUMP:
             cmd = 'J';
@@ -462,9 +462,9 @@ void instrument_render_command(int j, int y)
     }
     *(++dst) = color_choice[0];
     
-    if (!chip_player[instrument_i].track_volume)
+    if (!chip_player[verse_player].track_volume)
         return;
-    int cmd_index = chip_player[instrument_i].cmd_index;
+    int cmd_index = chip_player[verse_player].cmd_index;
     if (cmd_index)
     switch (instrument[instrument_i].cmd[cmd_index-1]&15)
     {
@@ -490,12 +490,12 @@ void instrument_render_command(int j, int y)
     }
 }
 
-int _check_instrument(int i);
+int _check_instrument();
 
-void check_instrument(int i)
+void check_instrument()
 {
     // check if that parameter broke something
-    if (_check_instrument(i))
+    if (_check_instrument())
     {
         instrument_bad = 1; 
         strcpy((char *)game_message, "bad jump, need wait in loop.");
@@ -516,66 +516,49 @@ void instrument_adjust_parameter(int direction)
     uint8_t cmd = instrument[instrument_i].cmd[instrument_j];
     uint8_t param = cmd>>4;
     cmd &= 15;
-    
-    switch (cmd)
+    if (cmd == WAVEFORM)
     {
-        case WAVEFORM:
-            param = param+direction;
-            if (param > 240)
-                param = WF_VIOLET;
-            else if (param > WF_VIOLET)
-                param = WF_SINE;
-            break;
-        case SIDE:
-        case BREAK:
-        case VOLUME:
-        case NOTE:
-        case WAIT:
-        case FADE_IN:
-        case FADE_OUT:
-        case INERTIA:
-        case VIBRATO:
-        case BEND:
-        case BITCRUSH:
-        case DUTY:
-        case DUTY_DELTA:
-        case RANDOMIZE:
-        case JUMP:
-            param = (param+direction)&15;
-            break;
+        param = param+direction;
+        if (param > 240)
+            param = WF_VIOLET;
+        else if (param > WF_VIOLET)
+            param = WF_SINE;
+    }
+    else
+    {
+        param = (param+direction)&15;
     }
     instrument[instrument_i].cmd[instrument_j] = cmd | (param<<4);
 
-    check_instrument(instrument_i);
+    check_instrument();
 }
 
-int _check_instrument(int i)
+int __check_instrument(uint8_t j, uint8_t j_max)
 {
     // check for a JUMP which loops back on itself without waiting at least a little bit.
     // return 1 if so, 0 if not.
-    int j=0; // current command index
     int j_last_jump = -1;
     int found_wait = 0;
     for (int k=0; k<32; ++k)
     {
-        if (j >= 16) // got to the end
+        if (j >= j_max) // got to the end
         {
             message("made it to end, good!\n");
             return 0;
         }
-        message("scanning instrument %d: line %d\n", i, j);
+        message("scanning instrument %d: line %d\n", instrument_i, j);
         if (j_last_jump >= 0)
         {
-            int j_next_jump = -1;
             if (j == j_last_jump) // we found our loop-back point
             {
                 message("returned to the jump\n");
                 return !(found_wait); // did we find a wait?
             }
-            switch (instrument[i].cmd[j]&15)
+            int j_next_jump = -1;
+            switch (instrument[instrument_i].cmd[j]&15)
             {
                 case JUMP:
-                    j_next_jump = instrument[i].cmd[j]>>4;
+                    j_next_jump = instrument[instrument_i].cmd[j]>>4;
                     if (j_next_jump == j_last_jump) // jumping forward to the original jump
                     {
                         message("jumped to the old jump\n");
@@ -605,12 +588,12 @@ int _check_instrument(int i)
         }
         else
         {
-            if ((instrument[i].cmd[j]&15) != JUMP)
+            if ((instrument[instrument_i].cmd[j]&15) != JUMP)
                 ++j;
             else
             {
                 j_last_jump = j;
-                j = instrument[i].cmd[j]>>4;
+                j = instrument[instrument_i].cmd[j]>>4;
                 if (j > j_last_jump)
                 {
                     message("This probably shouldn't happen??\n");
@@ -626,8 +609,20 @@ int _check_instrument(int i)
             }
         }
     }
-    message("couldn't finish after 32 iterations. congratulations.\nprobably looping back on self, but with waits.");
+    message("couldn't finish after iterations. congratulations.\nprobably looping back on self, but with waits.");
     return 0;
+}
+
+int _check_instrument()
+{
+    if (instrument[instrument_i].is_drum)
+    {
+        return __check_instrument(0, 2*MAX_DRUM_LENGTH) ||
+            __check_instrument(2*MAX_DRUM_LENGTH, 3*MAX_DRUM_LENGTH) ||
+            __check_instrument(3*MAX_DRUM_LENGTH, 4*MAX_DRUM_LENGTH);
+    }
+    else
+        return __check_instrument(0, MAX_INSTRUMENT_LENGTH);
 }
 
 void instrument_line()
@@ -748,7 +743,7 @@ void instrument_line()
                     strcpy((char *)buffer, "change in duty");
                     break;
                 case RANDOMIZE:
-                    strcpy((char *)buffer, "randomize command");
+                    strcpy((char *)buffer, "randomize next cmd");
                     break;
                 case JUMP:
                     strcpy((char *)buffer, "jump to command");
@@ -940,7 +935,7 @@ void instrument_controls()
             else
             {
                 error = io_load_instrument(instrument_i);
-                check_instrument(instrument_i);
+                check_instrument();
             }
             io_message_from_error(game_message, error, save_or_load);
             return;
@@ -1131,7 +1126,7 @@ void instrument_controls()
                 }
                 instrument[instrument_i].cmd[max_j-1] = BREAK;
             }
-            check_instrument(instrument_i);
+            check_instrument();
             return;
         }
 
@@ -1167,7 +1162,7 @@ void instrument_controls()
                     instrument[instrument_i].cmd[j] = instrument[instrument_i].cmd[j-1];
             }
             instrument[instrument_i].cmd[instrument_j] = instrument_command_copy;
-            check_instrument(instrument_i);
+            check_instrument();
             return;
         }
 
@@ -1175,13 +1170,13 @@ void instrument_controls()
         {
             uint8_t *cmd = &instrument[instrument_i].cmd[instrument_j];
             *cmd = ((*cmd - 1)&15) | ((*cmd)&240);
-            check_instrument(instrument_i);
+            check_instrument();
         }
         if (GAMEPAD_PRESS(0, R))
         {
             uint8_t *cmd = &instrument[instrument_i].cmd[instrument_j];
             *cmd = ((*cmd + 1)&15) | ((*cmd)&240);
-            check_instrument(instrument_i);
+            check_instrument();
         }
         
         if (instrument_bad) // can't do anything else until you fix this
