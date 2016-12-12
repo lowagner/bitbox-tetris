@@ -88,7 +88,6 @@ void game_init()
 
 void game_frame()
 {
-    kbd_emulate_gamepad();
     switch (visual_mode)
     {
     case MainMenu:

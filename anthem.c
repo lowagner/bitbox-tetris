@@ -2,10 +2,10 @@
 #include "common.h"
 #include "common.h"
 #include "chiptune.h"
+#include "palette.h"
 #include "instrument.h"
 #include "verse.h"
 #include "name.h"
-#include "palette.h"
 #include "font.h"
 #include "io.h"
 
@@ -308,6 +308,8 @@ void anthem_line()
         case 16:
             if (anthem_menu_not_edit)
                 font_render_line_doubled((uint8_t *)"select:verse menu", 16, internal_line, 65535, BG_COLOR*257);
+            else
+                font_render_line_doubled((uint8_t *)"select:main menu", 16, internal_line, 65535, BG_COLOR*257);
             break;        
         case 18:
             font_render_line_doubled(game_message, 16, internal_line, 65535, BG_COLOR*257);

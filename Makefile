@@ -9,10 +9,10 @@ GAME_C_FILES = font.c name.c run.c io.c menu.c palette.c \
     chiptune.c verse.c instrument.c anthem.c main.c
 GAME_H_FILES = font.h name.h run.h io.h menu.h palette.h \
     chiptune.h verse.h instrument.h anthem.h common.h 
-GAME_C_OPTS += -DVGAMODE_320
+GAME_C_OPTS += -DVGA_MODE=320
 
 # see this file for options
-include $(BITBOX)/lib/bitbox.mk
+include $(BITBOX)/kernel/bitbox.mk
 
 destroy:
 	rm -f RECENT16.TXT *.*16

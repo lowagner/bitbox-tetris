@@ -22,7 +22,6 @@ uint8_t verse_track_pos CCM_MEMORY;
 uint8_t verse_track_offset CCM_MEMORY;
 uint8_t verse_menu_not_edit CCM_MEMORY;
 uint8_t verse_copying CCM_MEMORY;
-uint8_t verse_last_painted CCM_MEMORY;
 uint8_t verse_show_track CCM_MEMORY;
 uint8_t verse_player CCM_MEMORY;
 uint8_t verse_command_copy CCM_MEMORY;
@@ -395,6 +394,13 @@ int _check_verse()
                     found_wait = 1;
                     ++j;
                     break;
+                case TRACK_BREAK:
+                    // check for a randomizer behind
+                    if (j > 0 && (chip_track[verse_track][verse_player][j-1]&15) == TRACK_RANDOMIZE)
+                    {}
+                    else if ((chip_track[verse_track][verse_player][j]>>4) == 0)
+                        return 0;
+                    // fall through to ++j
                 default:
                     ++j;
             }
