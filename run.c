@@ -2122,24 +2122,24 @@ int check_boundaries(int p)
     {
         if (game_torus)
         {
-            if (player[1].x_left < 0)
+            if (player[1].x_left < HOLE_X)
                 player[1].x_left += HOLE_X;
-            else if (player[1].x_left >= HOLE_X)
+            else if (player[1].x_left >= 2*HOLE_X)
                 player[1].x_left -= HOLE_X;
-            if (player[1].x_right < 0)
+            if (player[1].x_right < HOLE_X)
                 player[1].x_right += HOLE_X;
-            else if (player[1].x_right >= HOLE_X)
+            else if (player[1].x_right >= 2*HOLE_X)
                 player[1].x_right -= HOLE_X;
         }
         else
         {
-            if (player[1].x_left < 0)
+            if (player[1].x_left < HOLE_X)
                 return 1;
-            else if (player[1].x_left >= HOLE_X)
+            else if (player[1].x_left >= 2*HOLE_X)
                 return 1;
-            if (player[1].x_right < 0)
+            if (player[1].x_right < HOLE_X)
                 return 1;
-            else if (player[1].x_right >= HOLE_X)
+            else if (player[1].x_right >= 2*HOLE_X)
                 return 1;
         }
     }
@@ -2786,6 +2786,8 @@ void move_down_maybe()
 
 void run_controls()
 {
+    //gamepad_buttons[1] = gamepad_buttons[0]; // DEBUG
+
     if (GAMEPAD_PRESS(0, start))
     {
         if (GAMEPAD_PRESSED(0, select) || game_win_state)
