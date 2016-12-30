@@ -1,5 +1,8 @@
 # tetribox
 
+superceded by https://github.com/lowagner/bitbox-boredgames
+please go there.
+
 The mighty tetromino game.
 
 ## screenshots
